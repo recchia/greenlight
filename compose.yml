@@ -1,0 +1,28 @@
+services:
+  database:
+    image: postgres:${POSTGRES_VERSION:-18}-alpine
+    environment:
+      # You should definitely change the password in production
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-greenlightP@$$w0rd}
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}" ]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    ports:
+      - "5432:5432"
+    volumes:
+      - greenlight_box_data:/var/lib/postgresql/data:rw
+
+  migrate:
+    image: migrate/migrate:${MIGRATE_VERSION:-v4.19.1}
+    volumes:
+      - ./migrations:/migrations
+    command: ["-path", "/migrations", "-database", "postgres://greenlight:pa55word@database/greenlight?sslmode=disable", "up"]
+    depends_on:
+      database:
+        condition: service_healthy
+    profiles: ["tools"]
+
+volumes:
+  greenlight_box_data:
