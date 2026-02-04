@@ -5,7 +5,7 @@ services:
       # You should definitely change the password in production
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-greenlightP@$$w0rd}
     healthcheck:
-      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}" ]
+      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB:-greenlight}", "-U", "${POSTGRES_USER:-greenlight}" ]
       timeout: 5s
       retries: 5
       start_period: 60s
@@ -18,7 +18,6 @@ services:
     image: migrate/migrate:${MIGRATE_VERSION:-v4.19.1}
     volumes:
       - ./migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://greenlight:pa55word@database/greenlight?sslmode=disable", "up"]
     depends_on:
       database:
         condition: service_healthy
