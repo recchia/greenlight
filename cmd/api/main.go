@@ -4,9 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"time"
 
@@ -25,6 +23,11 @@ type config struct {
 		maxOpenConnections int
 		maxIdleConnections int
 		maxIdleTime        time.Duration
+	}
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
 	}
 }
 
@@ -51,6 +54,9 @@ func main() {
 	flag.IntVar(&cfg.db.maxOpenConnections, "max-open-connections", 25, "Maximum number of open connections to the database")
 	flag.IntVar(&cfg.db.maxIdleConnections, "max-idle-connections", 25, "Maximum number of idle connections in the pool")
 	flag.DurationVar(&cfg.db.maxIdleTime, "max-idle-time", 15*time.Minute, "Maximum duration that a connection can be idle before being closed")
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Requests per second limit for the rate limiter")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Burst size for the rate limiter")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiting")
 	flag.Parse()
 
 	db, err := openDB(cfg)
@@ -69,20 +75,12 @@ func main() {
 		models: data.NewModels(db),
 	}
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
+	err = app.serve()
+
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
-
-	logger.Info("Starting server", slog.Int("port", cfg.port), slog.String("env", cfg.env))
-
-	err = srv.ListenAndServe()
-	logger.Error(err.Error())
-	os.Exit(1)
 }
 
 func openDB(cfg config) (*sql.DB, error) {
