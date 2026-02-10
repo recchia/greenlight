@@ -23,5 +23,11 @@ services:
         condition: service_healthy
     profiles: ["tools"]
 
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025" # Web UI port
+      - "1025:1025" # SMTP port
+
 volumes:
   greenlight_box_data:
