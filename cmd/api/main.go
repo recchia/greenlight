@@ -6,6 +6,8 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -38,6 +40,9 @@ type config struct {
 		password string
 		sender   string
 	}
+	cors struct {
+		trustedOrigins []string
+	}
 }
 
 type application struct {
@@ -61,18 +66,30 @@ func main() {
 
 	flag.IntVar(&cfg.port, "port", 4000, "port to listen on")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
+
 	flag.StringVar(&cfg.db.dsn, "dsn", os.Getenv("GREENLIGHT_DB_DSN"), "Database connection string")
+
 	flag.IntVar(&cfg.db.maxOpenConnections, "max-open-connections", 25, "Maximum number of open connections to the database")
 	flag.IntVar(&cfg.db.maxIdleConnections, "max-idle-connections", 25, "Maximum number of idle connections in the pool")
 	flag.DurationVar(&cfg.db.maxIdleTime, "max-idle-time", 15*time.Minute, "Maximum duration that a connection can be idle before being closed")
+
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Requests per second limit for the rate limiter")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Burst size for the rate limiter")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiting")
+
 	flag.StringVar(&cfg.smtp.host, "smtp-host", os.Getenv("GREENLIGHT_SMTP_HOST"), "SMTP host")
-	flag.IntVar(&cfg.smtp.port, "smtp-port", 1025, "SMTP port")
+	port, _ := strconv.Atoi(os.Getenv("GREENLIGHT_SMTP_PORT"))
+	flag.IntVar(&cfg.smtp.port, "smtp-port", port, "SMTP port")
 	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("GREENLIGHT_SMTP_USERNAME"), "SMTP username")
 	flag.StringVar(&cfg.smtp.password, "", os.Getenv("GREENLIGHT_SMTP_PASSWORD"), "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@pierorecchia.com>", "Sender email address")
+
+	flag.Func("cors-trusted-origins", "Trusted origin (space separated) for CORS requests", func(s string) error {
+		cfg.cors.trustedOrigins = strings.Fields(s)
+
+		return nil
+	})
+
 	flag.Parse()
 
 	db, err := openDB(cfg)
