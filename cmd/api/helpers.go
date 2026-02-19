@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -44,9 +45,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 
 	js = append(js, '\n')
 
-	for k, v := range headers {
-		w.Header()[k] = v
-	}
+	maps.Copy(w.Header(), headers)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -138,10 +137,8 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 }
 
 func (app *application) background(fn func()) {
-	app.wg.Add(1)
 
-	go func() {
-		defer app.wg.Done()
+	app.wg.Go(func() {
 
 		defer func() {
 			if err := recover(); err != nil {
@@ -150,5 +147,5 @@ func (app *application) background(fn func()) {
 		}()
 
 		fn()
-	}()
+	})
 }
