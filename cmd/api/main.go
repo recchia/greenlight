@@ -69,7 +69,7 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 4000, "port to listen on")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 
-	flag.StringVar(&cfg.db.dsn, "dsn", os.Getenv("GREENLIGHT_DB_DSN"), "Database connection string")
+	flag.StringVar(&cfg.db.dsn, "dsn", "", "Database connection string")
 
 	flag.IntVar(&cfg.db.maxOpenConnections, "max-open-connections", 25, "Maximum number of open connections to the database")
 	flag.IntVar(&cfg.db.maxIdleConnections, "max-idle-connections", 25, "Maximum number of idle connections in the pool")
