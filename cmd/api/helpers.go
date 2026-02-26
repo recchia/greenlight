@@ -25,16 +25,6 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 	return id, nil
 }
 
-func (app *application) readStringParam(r *http.Request, paramName string) (string, error) {
-	params := httprouter.ParamsFromContext(r.Context())
-	value := params.ByName(paramName)
-	if value == "" {
-		return "", errors.New("missing required parameter")
-	}
-
-	return value, nil
-}
-
 type envelope map[string]any
 
 func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
