@@ -18,9 +18,12 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/recchia/greenlight/internal/data"
 	"github.com/recchia/greenlight/internal/mailer"
+	"github.com/recchia/greenlight/internal/vcs"
 )
 
-const version = "1.0.0"
+var (
+	version = vcs.Version()
+)
 
 type config struct {
 	port int
